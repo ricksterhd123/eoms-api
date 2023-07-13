@@ -1,0 +1,21 @@
+version: '3.1'
+
+services:
+  postgres:
+    build: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: example
+    ports: [5432:5432]
+
+  adminer:
+    image: adminer
+    restart: always
+    depends_on: [postgres]
+    ports: [8080:8080]
+
+  # eoms-api:
+  #   build: eoms-api
+  #   restart: always
+  #   depends_on: [postgres]
+  #   ports: [8000:8000]
