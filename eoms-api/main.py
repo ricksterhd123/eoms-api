@@ -1,6 +1,7 @@
 import os
-import psycopg2
-from models.customer import list_customers
+from models import Base, Customer, Item
+from sqlalchemy import create_engine, select
+from sqlalchemy.orm import Session
 from fastapi import FastAPI
 
 DATABASE_NAME = "eoms"
@@ -8,18 +9,21 @@ DATABASE_USER = os.environ.get("DATABASE_USER", "postgres")
 DATABASE_PASS = os.environ.get("DATABASE_PASS", "example")
 DATABASE_HOST = os.environ.get("DATABASE_HOST", "127.0.0.1")
 
+engine = create_engine(f"postgresql+psycopg2://{DATABASE_USER}:{DATABASE_PASS}@{DATABASE_HOST}/{DATABASE_NAME}")
+Base.metadata.create_all(engine)
+conn = engine.connect()
 app = FastAPI()
-db_connection = psycopg2.connect(
-    database=DATABASE_NAME, 
-    user=DATABASE_USER, 
-    password=DATABASE_PASS, 
-    host=DATABASE_HOST
-)
 
 @app.get("/customers")
-def get_customers():
-    return list_customers(db_connection)
+def get_customers(limit: int = 10, offset: int = 0):
+    stmt = select(Customer).limit(limit).offset(offset)
+    session = Session(conn)
+    result = session.execute(stmt)
+    return { "customers": result.scalars().all() }
 
-# @app.get("/orders")
-# def get_orders():
-#     return [{"test": True}]
+@app.get("/items")
+def get_items(limit: int = 10, offset: int = 0):
+    stmt = select(Item).limit(limit).offset(offset)
+    session = Session(conn)
+    result = session.execute(stmt)
+    return { "items": result.scalars().all() }
